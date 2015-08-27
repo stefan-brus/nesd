@@ -4,7 +4,7 @@
 
 module main;
 
-import nesd.cpu;
+import nesd.Console;
 import nesd.INES;
 
 import std.exception;
@@ -24,8 +24,8 @@ void main ( string[] args )
     writefln("%s", rom_file.header.toPrettyString());
     writefln("Starting CPU");
 
-    auto cpu = CPU(rom_file.prg_rom);
+    auto console = Console(rom_file);
 
     writefln("Stepping through program ROM");
-    while ( cpu.stepPrint() ) {}
+    console.start();
 }

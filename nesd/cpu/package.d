@@ -41,6 +41,12 @@ struct CPU
     ushort pc;
 
     /**
+     * The number of clock cycles that have passed
+     */
+
+    ulong cycles;
+
+    /**
      * Constructor
      *
      * Params:
@@ -53,13 +59,15 @@ struct CPU
     }
 
     /**
-     * Print the next instruction + operands and increment the program counter.
+     * Run one step of the CPU and update the state accordingly.
+     *
+     * Print the CPU state along the way.
      *
      * Returns:
-     *      True if there is more program to step through.
+     *      True if the CPU should continue
      */
 
-    bool stepPrint ( )
+    bool step ( )
     in
     {
         assert(this.pc < this.prg_rom.length);
@@ -76,38 +84,277 @@ struct CPU
 
         if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
         {
-            enforce(this.pc < this.prg_rom.length, "Instruction requires more operands than program size: " ~ instruction.toPrettyString!()());
+            enforce(this.pc < this.prg_rom.length, "Instruction requires more operands than program size: " ~ instruction.name);
             operands ~= this.prg_rom[this.pc];
             this.pc++;
         }
 
-        string inst_string;
+        this.cycles += instruction.cycles;
 
-        // TODO: Dirty as fuck
-        switch ( operands.length )
-        {
-            case 0:
-                inst_string = instruction.toPrettyString!()();
-                break;
+        this.runInstruction(instruction);
 
-            case 1:
-                inst_string = instruction.toPrettyString!(ubyte)(operands[0]);
-                break;
-
-            case 2:
-                inst_string = instruction.toPrettyString!(ubyte, ubyte)(operands[0], operands[1]);
-                break;
-
-            case 3:
-                inst_string = instruction.toPrettyString!(ubyte, ubyte, ubyte)(operands[0], operands[1], operands[2]);
-                break;
-
-            default:
-                enforce(false, "Can't print instructions with more than 3 operands");
-        }
-
-        writefln("%s", inst_string);
+        writefln("cycles: %d PC: %04x", this.cycles, this.pc);
 
         return this.pc < this.prg_rom.length;
+    }
+
+    /**
+     * Print the next instruction + operands and increment the program counter.
+     *
+     * Returns:
+     *      True if there is more program to step through.
+     */
+
+    bool stepPrintInstructions ( )
+    in
+    {
+        assert(this.pc < this.prg_rom.length);
+    }
+    body
+    {
+        import std.exception;
+        import std.stdio;
+
+        auto instruction = OPCODE_TABLE[this.prg_rom[this.pc]];
+        this.pc++;
+
+        ubyte[] operands;
+
+        if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
+        {
+            enforce(this.pc < this.prg_rom.length, "Instruction requires more operands than program size: " ~ instruction.name);
+            operands ~= this.prg_rom[this.pc];
+            this.pc++;
+        }
+
+        writefln("%s", instruction.toPrettyString(operands));
+
+        return this.pc < this.prg_rom.length;
+    }
+
+    /**
+     * Run an given instruction
+     *
+     * Params:
+     *      instruction = The instruction
+     */
+
+    private void runInstruction ( Instruction instruction )
+    {
+        import std.exception;
+
+        switch ( instruction.name )
+        {
+            case "BRK":
+                this.nop();
+                break;
+            case "ORA":
+                this.nop();
+                break;
+            case "NOP":
+                this.nop();
+                break;
+            case "ASL":
+                this.nop();
+                break;
+            case "PHP":
+                this.nop();
+                break;
+            case "BPL":
+                this.nop();
+                break;
+            case "CLC":
+                this.nop();
+                break;
+            case "JSR":
+                this.nop();
+                break;
+            case "AND":
+                this.nop();
+                break;
+            case "BIT":
+                this.nop();
+                break;
+            case "ROL":
+                this.nop();
+                break;
+            case "PLP":
+                this.nop();
+                break;
+            case "BMI":
+                this.nop();
+                break;
+            case "SEC":
+                this.nop();
+                break;
+            case "RTI":
+                this.nop();
+                break;
+            case "EOR":
+                this.nop();
+                break;
+            case "LSR":
+                this.nop();
+                break;
+            case "PHA":
+                this.nop();
+                break;
+            case "JMP":
+                this.nop();
+                break;
+            case "CLI":
+                this.nop();
+                break;
+            case "RTS":
+                this.nop();
+                break;
+            case "ADC":
+                this.nop();
+                break;
+            case "ROR":
+                this.nop();
+                break;
+            case "PLA":
+                this.nop();
+                break;
+            case "BVS":
+                this.nop();
+                break;
+            case "BVC":
+                this.nop();
+                break;
+            case "SEI":
+                this.nop();
+                break;
+            case "STA":
+                this.nop();
+                break;
+            case "STY":
+                this.nop();
+                break;
+            case "STX":
+                this.nop();
+                break;
+            case "DEY":
+                this.nop();
+                break;
+            case "TXS":
+                this.nop();
+                break;
+            case "TXA":
+                this.nop();
+                break;
+            case "TYA":
+                this.nop();
+                break;
+            case "BCC":
+                this.nop();
+                break;
+            case "LDY":
+                this.nop();
+                break;
+            case "LDA":
+                this.nop();
+                break;
+            case "LDX":
+                this.nop();
+                break;
+            case "TAY":
+                this.nop();
+                break;
+            case "TAX":
+                this.nop();
+                break;
+            case "TSX":
+                this.nop();
+                break;
+            case "BCS":
+                this.nop();
+                break;
+            case "CLV":
+                this.nop();
+                break;
+            case "CPY":
+                this.nop();
+                break;
+            case "CMP":
+                this.nop();
+                break;
+            case "DEC":
+                this.nop();
+                break;
+            case "INY":
+                this.nop();
+                break;
+            case "DEX":
+                this.nop();
+                break;
+            case "BNE":
+                this.nop();
+                break;
+            case "CLD":
+                this.nop();
+                break;
+            case "CPX":
+                this.nop();
+                break;
+            case "SBC":
+                this.nop();
+                break;
+            case "INC":
+                this.nop();
+                break;
+            case "INX":
+                this.nop();
+                break;
+            case "BEQ":
+                this.nop();
+                break;
+            case "SED":
+                this.nop();
+                break;
+            case "KIL":
+            case "SLO":
+            case "ANC":
+            case "RLA":
+            case "SRE":
+            case "ALR":
+            case "RRA":
+            case "ARR":
+            case "SAX":
+            case "XAA":
+            case "TAS":
+            case "AHX":
+            case "LAX":
+            case "SHY":
+            case "LAS":
+            case "SHX":
+            case "DCP":
+            case "AXS":
+            case "ISC":
+                // Illegal instruction
+                this.illegal();
+                break;
+            default:
+                enforce(false, "Unknown instruction: " ~ instruction.name);
+        }
+    }
+
+    /**
+     * NOP - No operation
+     */
+
+     private void nop ( )
+     {
+
+     }
+
+     /**
+      * Illegal instruction
+      */
+
+    private void illegal ( )
+    {
+
     }
 }

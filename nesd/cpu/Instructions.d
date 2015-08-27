@@ -36,7 +36,7 @@ struct Instruction
      * The instruction string representation
      */
 
-    immutable string name;
+    string name;
 
     /**
      * The addressing mode
@@ -78,7 +78,28 @@ struct Instruction
      *      The instruction as a human readable string.
      */
 
-    string toPrettyString ( T ... ) ( T operands ... )
+    string toPrettyString ( ubyte[] operands )
+    {
+        import std.exception;
+
+        switch ( operands.length )
+        {
+            case 0:
+                return this.toPrettyStringT!()();
+            case 1:
+                return this.toPrettyStringT!(ubyte)(operands[0]);
+            case 2:
+                return this.toPrettyStringT!(ubyte, ubyte)(operands[0], operands[1]);
+            case 3:
+                return this.toPrettyStringT!(ubyte, ubyte, ubyte)(operands[0], operands[1], operands[2]);
+            default:
+                enforce(false, "Can't print instructions with more than 3 operands");
+        }
+
+        assert(false);
+    }
+
+    private string toPrettyStringT ( T ... ) ( T operands ... )
     in
     {
         assert(this.size == 0 || T.length == this.size - 1);
