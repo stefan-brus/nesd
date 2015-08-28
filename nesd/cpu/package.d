@@ -11,6 +11,7 @@
 module nesd.cpu;
 
 import nesd.cpu.Instructions;
+import nesd.Memory;
 
 import std.exception;
 
@@ -27,12 +28,10 @@ struct CPU
     enum CLOCK_FREQ = 1789773;
 
     /**
-     * The program ROM memory
-     *
-     * TODO: Replace with memory module
+     * Pointer to the memory module
      */
 
-    immutable ubyte[] prg_rom;
+    Memory* memory;
 
     /**
      * The program counter
@@ -50,12 +49,29 @@ struct CPU
      * Constructor
      *
      * Params:
-     *      prg_rom = The program ROM memory
+     *      memory = The memory module
      */
 
-    this ( immutable ubyte[] prg_rom )
+    this ( Memory* memory )
+    in
     {
-        this.prg_rom = prg_rom;
+        assert(memory !is null);
+    }
+    body
+    {
+        this.memory = memory;
+
+        this.reset();
+    }
+
+    /**
+     * Reset the CPU
+     */
+
+    void reset ( )
+    {
+        this.pc = 0x8000;
+        this.cycles = 0;
     }
 
     /**
@@ -70,22 +86,22 @@ struct CPU
     bool step ( )
     in
     {
-        assert(this.pc < this.prg_rom.length);
+        assert(this.pc < ushort.max);
     }
     body
     {
         import std.exception;
         import std.stdio;
 
-        auto instruction = OPCODE_TABLE[this.prg_rom[this.pc]];
+        auto instruction = OPCODE_TABLE[this.memory.read(this.pc)];
         this.pc++;
 
         ubyte[] operands;
 
         if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
         {
-            enforce(this.pc < this.prg_rom.length, "Instruction requires more operands than program size: " ~ instruction.name);
-            operands ~= this.prg_rom[this.pc];
+            enforce(this.pc < ushort.max, "Instruction requires more operands than program size: " ~ instruction.name);
+            operands ~= this.memory.read(this.pc);
             this.pc++;
         }
 
@@ -95,7 +111,7 @@ struct CPU
 
         writefln("cycles: %d PC: %04x", this.cycles, this.pc);
 
-        return this.pc < this.prg_rom.length;
+        return this.pc < ushort.max;
     }
 
     /**
@@ -108,28 +124,28 @@ struct CPU
     bool stepPrintInstructions ( )
     in
     {
-        assert(this.pc < this.prg_rom.length);
+        assert(this.pc < ushort.max);
     }
     body
     {
         import std.exception;
         import std.stdio;
 
-        auto instruction = OPCODE_TABLE[this.prg_rom[this.pc]];
+        auto instruction = OPCODE_TABLE[this.memory.read(this.pc)];
         this.pc++;
 
         ubyte[] operands;
 
         if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
         {
-            enforce(this.pc < this.prg_rom.length, "Instruction requires more operands than program size: " ~ instruction.name);
-            operands ~= this.prg_rom[this.pc];
+            enforce(this.pc < ushort.max, "Instruction requires more operands than program size: " ~ instruction.name);
+            operands ~= this.memory.read(this.pc);
             this.pc++;
         }
 
         writefln("%s", instruction.toPrettyString(operands));
 
-        return this.pc < this.prg_rom.length;
+        return this.pc < ushort.max;
     }
 
     /**

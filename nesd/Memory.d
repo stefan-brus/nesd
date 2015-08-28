@@ -7,6 +7,8 @@
 
 module nesd.Memory;
 
+import nesd.INES;
+
 /**
  * Memory struct
  */
@@ -46,6 +48,19 @@ struct Memory
      */
 
     ubyte[0xbfe0] magic;
+
+    /**
+     * Constructor
+     *
+     * Params:
+     *      rom = The iNES rom file to initialize the memory from
+     */
+
+    this ( iNESFile rom )
+    {
+        this.ram[] = rom.chr_rom[0 .. this.ram.sizeof];
+        this.magic[0x8000 - 0x4020 .. $] = rom.prg_rom[0 .. 0xffff - 0x7fff];
+    }
 
     /**
      * Read the value at the given address
@@ -97,25 +112,25 @@ struct Memory
         ubyte* ptr;
 
         // $0000-$07FF  $0800   2KB internal RAM
-        if ( addr < 0x07ff )
+        if ( addr <= 0x07ff )
         {
             ptr = &this.ram[addr];
         }
         // $0800-$0FFF  $0800   Mirrors of $0000-$07FF
         // $1000-$17FF  $0800   Mirrors of $0000-$07FF
         // $1800-$1FFF  $0800   Mirrors of $0000-$07FF
-        else if ( addr < 0x1fff )
+        else if ( addr <= 0x1fff )
         {
             ptr = &this.ram[addr % this.ram.sizeof];
         }
         // $2000-$2007  $0008   NES PPU registers
         // $2008-$3FFF  $1FF8   Mirrors of $2000-2007 (repeats every 8 bytes)
-        else if ( addr < 0x3fff )
+        else if ( addr <= 0x3fff )
         {
             ptr = &this.ppu_reg[addr % this.ppu_reg.sizeof];
         }
         // $4000-$401F  $0020   NES APU and I/O registers
-        else if ( addr < 0x401f )
+        else if ( addr <= 0x401f )
         {
             ptr = &this.apu_reg[addr % this.apu_reg.sizeof];
         }

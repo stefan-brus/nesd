@@ -17,16 +17,16 @@ import nesd.Memory;
 struct Console
 {
     /**
-     * The 2A03 CPU
-     */
-
-    CPU cpu;
-
-    /**
      * The memory module
      */
 
     Memory memory;
+
+    /**
+     * The 2A03 CPU
+     */
+
+    CPU cpu;
 
     /**
      * Constructor
@@ -37,7 +37,8 @@ struct Console
 
     this ( iNESFile rom )
     {
-        this.cpu = CPU(rom.prg_rom);
+        this.memory = Memory(rom);
+        this.cpu = CPU(&memory);
     }
 
     /**
