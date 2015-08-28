@@ -91,6 +91,22 @@ struct Memory
     }
 
     /**
+     * Check if two addresses are on the same page
+     *
+     * Params:
+     *      addr1 = The first address
+     *      addr2 = The second address
+     *
+     * Returns:
+     *      True if they are on the same page, false otherwise
+     */
+
+    static bool samePage ( Address addr1, Address addr2 )
+    {
+        return (addr1 & 0xff00) == (addr2 & 0xff00);
+    }
+
+    /**
      * Get a pointer to the value at the given address.
      *
      * Addresses sometimes mirror other parts of the memory, and these are
