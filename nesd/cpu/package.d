@@ -456,7 +456,7 @@ struct CPU
                 this.sei();
                 break;
             case "STA":
-                this.nop();
+                this.sta(addr);
                 break;
             case "STY":
                 this.nop();
@@ -468,7 +468,7 @@ struct CPU
                 this.nop();
                 break;
             case "TXS":
-                this.nop();
+                this.txs();
                 break;
             case "TXA":
                 this.nop();
@@ -483,10 +483,10 @@ struct CPU
                 this.nop();
                 break;
             case "LDA":
-                this.nop();
+                this.lda(addr);
                 break;
             case "LDX":
-                this.nop();
+                this.ldx(addr);
                 break;
             case "TAY":
                 this.nop();
@@ -522,7 +522,7 @@ struct CPU
                 this.nop();
                 break;
             case "CLD":
-                this.nop();
+                this.cld();
                 break;
             case "CPX":
                 this.nop();
@@ -569,6 +569,64 @@ struct CPU
         }
 
         return page_crossed;
+    }
+
+    /**
+     * TXS - Transfer X To Stack Pointer
+     */
+
+    private void txs ( )
+    {
+        this.sp = this.x;
+    }
+
+    /**
+     * LDX - Load X Register
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void ldx ( Address addr )
+    {
+        this.x = this.memory.read(addr);
+        this.z = this.x == 0;
+        this.n = this.x > 0x80;
+    }
+
+    /**
+     * STA - Store Accumulator
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void sta ( Address addr )
+    {
+        this.memory.write(addr, this.a);
+    }
+
+    /**
+     * LDA - Load Accumulator
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void lda ( Address addr )
+    {
+        this.a = this.memory.read(addr);
+        this.z = this.a == 0;
+        this.n = this.a > 0x80;
+    }
+
+    /**
+     * CLD - Clear Decimal Mode
+     */
+
+    private void cld ( )
+    {
+        this.d = false;
     }
 
     /**
