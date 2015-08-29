@@ -385,7 +385,7 @@ struct CPU
                 this.plp();
                 break;
             case "BMI":
-                this.nop();
+                this.bmi(addr);
                 break;
             case "SEC":
                 this.nop();
@@ -544,6 +544,22 @@ struct CPU
     }
 
     /**
+     * BMI - Branch If minus
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void bmi ( Address addr )
+    {
+        if ( this.n > 0 )
+        {
+            this.addBranchCycles(addr);
+            this.pc = addr;
+        }
+    }
+
+    /**
      * PLP - Pull Processor Status
      */
 
@@ -611,12 +627,12 @@ struct CPU
      *      addr = The address
      */
 
-    private void bpl ( Address address )
+    private void bpl ( Address addr )
     {
         if ( this.n == 0 )
         {
-            this.addBranchCycles(address);
-            this.pc = address;
+            this.addBranchCycles(addr);
+            this.pc = addr;
         }
     }
 
