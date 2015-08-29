@@ -176,44 +176,9 @@ struct CPU
             this.cycles += instruction.page_cross_cycles;
         }
 
+        writefln("%s", instruction.toPrettyString(operands));
         writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags: %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
-
-        version ( ManualStep ) readln();
-
-        return this.pc < Address.max;
-    }
-
-    /**
-     * Print the next instruction + operands and increment the program counter.
-     *
-     * Returns:
-     *      True if there is more program to step through.
-     */
-
-    bool stepPrintInstructions ( )
-    in
-    {
-        assert(this.pc < Address.max);
-    }
-    body
-    {
-        import std.exception;
-        import std.stdio;
-
-        auto instruction = OPCODE_TABLE[this.memory.read(this.pc)];
-        this.pc++;
-
-        ubyte[] operands;
-
-        if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
-        {
-            enforce(this.pc < Address.max, "Instruction requires more operands than program size: " ~ instruction.name);
-            operands ~= this.memory.read(this.pc);
-            this.pc++;
-        }
-
-        writefln("%s", instruction.toPrettyString(operands));
 
         version ( ManualStep ) readln();
 
@@ -458,10 +423,10 @@ struct CPU
                 this.nop();
                 break;
             case "PHA":
-                this.nop();
+                this.pha();
                 break;
             case "JMP":
-                this.nop();
+                this.jmp(addr);
                 break;
             case "CLI":
                 this.nop();
@@ -601,6 +566,27 @@ struct CPU
         }
 
         return page_crossed;
+    }
+
+    /**
+     * JMP - Jump
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void jmp ( Address addr )
+    {
+        this.pc = addr;
+    }
+
+    /**
+     * PHA - Push Accumulator
+     */
+
+    private void pha ( )
+    {
+        this.push(this.a);
     }
 
     /**
