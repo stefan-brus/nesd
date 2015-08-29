@@ -171,10 +171,15 @@ struct CPU
 
         this.cycles += instruction.cycles;
 
-        this.runInstruction(instruction, operands);
+        if ( this.runInstruction(instruction, operands) )
+        {
+            this.cycles += instruction.page_cross_cycles;
+        }
 
         writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags: %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
+
+        version ( ManualStep ) readln();
 
         return this.pc < Address.max;
     }
@@ -210,6 +215,8 @@ struct CPU
 
         writefln("%s", instruction.toPrettyString(operands));
 
+        version ( ManualStep ) readln();
+
         return this.pc < Address.max;
     }
 
@@ -231,6 +238,7 @@ struct CPU
 
     /**
      * Push a word (2 bytes) onto the stack.
+     *
      * Memory addresses 0x0100 to 0x01ff are reserved for the stack.
      *
      * Params:
@@ -263,6 +271,23 @@ struct CPU
     }
 
     /**
+     * Pop a word (2 bytes) from the stac.
+     *
+     * Memory addresses 0x0100 to 0x01ff are reserved for the stack.
+     *
+     * Returns:
+     *      The two bytes on top of the stack
+     */
+
+    private ushort popw ( )
+    {
+        ubyte lo = this.pop();
+        ubyte hi = this.pop();
+
+        return (hi << 8) | lo;
+    }
+
+    /**
      * Add to the cycle counter when branching.
      *
      * Add an extra cycle if the branch goes out of page.
@@ -282,18 +307,24 @@ struct CPU
     }
 
     /**
-     * Run a given instruction
+     * Run a given instruction.
+     *
+     * This monster should probably be refactored.
      *
      * Params:
      *      instruction = The instruction
      *      operands = The operands
+     *
+     * Returns:
+     *      True if a page was crossed
      */
 
-    private void runInstruction ( Instruction instruction, ubyte[] operands )
+    private bool runInstruction ( Instruction instruction, ubyte[] operands )
     {
         import std.exception;
 
         Address addr;
+        bool page_crossed;
 
         // Fetch the address for the instruction's addressing mode
         with ( AddrMode ) final switch ( instruction.mode )
@@ -306,12 +337,16 @@ struct CPU
             case Accumulator:
                 break;
             case Immediate:
+                addr += this.pc + 1;
                 break;
             case ZeroPage:
+                addr += this.memory.read(cast(Address)(this.pc + 1));
                 break;
             case ZeroPageX:
+                addr += this.memory.read(cast(Address)(this.pc + 1)) + this.x;
                 break;
             case ZeroPageY:
+                addr += this.memory.read(cast(Address)(this.pc + 1)) + this.y;
                 break;
             case Relative:
                 enforce(operands.length > 0, "Relative addressing mode requires at least 1 operand");
@@ -334,14 +369,37 @@ struct CPU
                 addr += operands[1] << 8;
                 break;
             case AbsoluteX:
+                enforce(operands.length > 1, "AbsoluteX addressing mode requires at least 2 operands");
+
+                addr += operands[0];
+                addr += operands[1] << 8;
+                page_crossed = Memory.samePage(addr, cast(Address)(addr + this.x));
+                addr += this.x;
                 break;
             case AbsoluteY:
+                enforce(operands.length > 1, "AbsoluteY addressing mode requires at least 2 operands");
+
+                addr += operands[0];
+                addr += operands[1] << 8;
+                page_crossed = Memory.samePage(addr, cast(Address)(addr + this.y));
+                addr += this.y;
                 break;
             case Indirect:
+                enforce(operands.length > 1, "Indirect addressing mode requires at least 2 operands");
+
+                addr += this.memory.readw((operands[1] << 8) | operands[0]);
                 break;
             case IndirectX:
+                enforce(operands.length > 0, "IndirectX addressing mode requires at least 1 operands");
+
+                addr += this.memory.readw(cast(Address)(operands[0] + this.x));
                 break;
             case IndirectY:
+                enforce(operands.length > 0, "IndirectY addressing mode requires at least 1 operands");
+
+                addr += this.memory.readw(operands[0]);
+                page_crossed = Memory.samePage(addr, cast(Address)(addr + this.y));
+                addr += this.y;
                 break;
         }
 
@@ -388,13 +446,13 @@ struct CPU
                 this.bmi(addr);
                 break;
             case "SEC":
-                this.nop();
+                this.sec();
                 break;
             case "RTI":
-                this.nop();
+                this.rti();
                 break;
             case "EOR":
-                this.nop();
+                this.eor(addr);
                 break;
             case "LSR":
                 this.nop();
@@ -541,6 +599,41 @@ struct CPU
             default:
                 enforce(false, "Unknown instruction: " ~ instruction.name);
         }
+
+        return page_crossed;
+    }
+
+    /**
+     * EOR - Exclusive OR
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void eor ( Address addr )
+    {
+        this.a ^= this.memory.read(addr);
+        this.z = this.a == 0;
+        this.n = this.a > 0x80;
+    }
+
+    /**
+     * RTI - Return From Interrupt
+     */
+
+    private void rti ( )
+    {
+        this.plp();
+        this.pc = this.popw();
+    }
+
+    /**
+     * SEC - Set Carry Flag
+     */
+
+    private void sec ( )
+    {
+        this.c = true;
     }
 
     /**

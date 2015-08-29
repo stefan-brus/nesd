@@ -78,6 +78,26 @@ struct Memory
     }
 
     /**
+     * Read a word (2 bytes) starting from the given address.
+     *
+     * Little endianness is used so the low byte is stored first.
+     *
+     * Params:
+     *      addr = The address
+     *
+     * Returns:
+     *      The two bytes at the address, and the one after it
+     */
+
+    ushort readw ( Address addr )
+    {
+        ubyte lo = *(this.access(addr));
+        ubyte hi = *(this.access(cast(Address)(addr + 1)));
+
+        return (hi << 8) | lo;
+    }
+
+    /**
      * Write a value to the given address
      *
      * Params:
@@ -150,7 +170,7 @@ struct Memory
         {
             ptr = &this.apu_reg[addr % this.apu_reg.sizeof];
         }
-        // $4020-$FFFF  $BFE0   Cartridge space: PRG ROM, PRG RAM, and mapper registers (See Note)
+        // $4020-$FFFF  $BFE0   Cartridge space: PRG ROM, PRG RAM, and mapper registers
         else
         {
             ptr = &this.magic[addr - 0x4020];
