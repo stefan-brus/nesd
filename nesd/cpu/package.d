@@ -52,6 +52,14 @@ struct CPU
     ubyte sp;
 
     /**
+     * The registers: X, Y and A (Accumulator)
+     */
+
+    alias Register = ubyte;
+
+    Register x, y, a;
+
+    /**
      * The number of clock cycles that have passed
      */
 
@@ -165,7 +173,8 @@ struct CPU
 
         this.runInstruction(instruction, operands);
 
-        writefln("cycles: %d PC: %04x SP: %02x", this.cycles, this.pc, this.sp);
+        writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags: %08b",
+            this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
 
         return this.pc < Address.max;
     }
@@ -364,7 +373,7 @@ struct CPU
                 this.jsr(addr);
                 break;
             case "AND":
-                this.nop();
+                this.and(addr);
                 break;
             case "BIT":
                 this.nop();
@@ -532,6 +541,20 @@ struct CPU
             default:
                 enforce(false, "Unknown instruction: " ~ instruction.name);
         }
+    }
+
+    /**
+     * AND - Logical AND
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void and ( Address addr )
+    {
+        this.a = this.a & this.memory.read(addr);
+        this.z = this.a == 0;
+        this.n = this.a > 0x80;
     }
 
     /**
