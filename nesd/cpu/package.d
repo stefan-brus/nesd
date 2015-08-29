@@ -157,16 +157,17 @@ struct CPU
         import std.exception;
         import std.stdio;
 
-        auto instruction = OPCODE_TABLE[this.memory.read(this.pc)];
-        this.pc++;
+        auto opcode = this.memory.read(this.pc);
+        auto instruction = OPCODE_TABLE[opcode];
+        auto pc_inc = 1; // Number to increment program counter by
 
         ubyte[] operands;
 
         if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
         {
-            enforce(this.pc < Address.max, "Instruction requires more operands than program size: " ~ instruction.name);
-            operands ~= this.memory.read(this.pc);
-            this.pc++;
+            enforce(this.pc + pc_inc < Address.max, "Instruction requires more operands than program size: " ~ instruction.name);
+            operands ~= this.memory.read(cast(Address)(this.pc + pc_inc));
+            pc_inc++;
         }
 
         this.cycles += instruction.cycles;
@@ -176,7 +177,9 @@ struct CPU
             this.cycles += instruction.page_cross_cycles;
         }
 
-        writefln("%s", instruction.toPrettyString(operands));
+        this.pc += pc_inc;
+
+        writefln("%02x %s", opcode, instruction.toPrettyString(operands));
         writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags: %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
 
@@ -318,7 +321,7 @@ struct CPU
 
                 auto offset = cast(Address)operands[0];
 
-                addr += this.pc;
+                addr += this.pc + 2;
                 addr += offset;
                 addr++;
 
@@ -429,7 +432,7 @@ struct CPU
                 this.jmp(addr);
                 break;
             case "CLI":
-                this.nop();
+                this.cli();
                 break;
             case "RTS":
                 this.nop();
@@ -450,7 +453,7 @@ struct CPU
                 this.nop();
                 break;
             case "SEI":
-                this.nop();
+                this.sei();
                 break;
             case "STA":
                 this.nop();
@@ -566,6 +569,24 @@ struct CPU
         }
 
         return page_crossed;
+    }
+
+    /**
+     * SEI - Set Interrupt Disable
+     */
+
+    private void sei ( )
+    {
+        this.i = true;
+    }
+
+    /**
+     * CLI - Clear Interrupt Disable
+     */
+
+    private void cli ( )
+    {
+        this.i = false;
     }
 
     /**
