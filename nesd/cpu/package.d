@@ -255,7 +255,7 @@ struct CPU
      *      The value on top of the stack
      */
 
-    private ubyte pop ( ubyte val )
+    private ubyte pop ( )
     {
         this.sp++;
 
@@ -376,13 +376,13 @@ struct CPU
                 this.and(addr);
                 break;
             case "BIT":
-                this.nop();
+                this.bit(addr);
                 break;
             case "ROL":
                 this.nop();
                 break;
             case "PLP":
-                this.nop();
+                this.plp();
                 break;
             case "BMI":
                 this.nop();
@@ -544,6 +544,31 @@ struct CPU
     }
 
     /**
+     * PLP - Pull Processor Status
+     */
+
+    private void plp ( )
+    {
+        this.flags_ = this.pop() & ~0x10 | 0x20; // unset b, set u
+    }
+
+    /**
+     * BIT - Bit Test
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void bit ( Address addr )
+    {
+        auto val = this.memory.read(addr);
+
+        this.v = (val & 0x20) > 0; // bitmask 00100000
+        this.z = (val & this.a) > 0;
+        this.n = val > 0x80;
+    }
+
+    /**
      * AND - Logical AND
      *
      * Params:
@@ -601,7 +626,7 @@ struct CPU
 
     private void php ( )
     {
-        this.push(this.b);
+        this.push(this.flags_ | 0x10); // set b
     }
 
     /**
