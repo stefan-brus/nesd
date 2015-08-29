@@ -42,11 +42,11 @@ struct Console
     }
 
     /**
-     * Start the console
+     * Run one step of the console
      */
 
-    void start ( )
+    void step ( )
     {
-        while ( this.cpu.step() ) {}
+        this.cpu.step();
     }
 }

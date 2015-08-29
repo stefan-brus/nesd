@@ -7,11 +7,14 @@ module main;
 import nesd.Console;
 import nesd.INES;
 
+import ui.NESGame;
+import ui.SDLApp;
+
 import std.exception;
 import std.file;
 import std.stdio;
 
-void main ( string[] args )
+int main ( string[] args )
 {
     enforce(args.length == 2, "Argument 'file' missing");
 
@@ -26,6 +29,8 @@ void main ( string[] args )
 
     auto console = Console(rom_file);
 
-    writefln("Stepping through program ROM");
-    console.start();
+    auto game = new NESGame(&console);
+    auto app = new SDLApp("NESD", 256, 240, game);
+
+    return app.run();
 }

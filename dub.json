@@ -1,0 +1,12 @@
+{
+	"name": "nesd",
+	"description": "Highly experimental NES emulator.",
+	"copyright": "Copyright © 2015, Stefan Brus",
+	"authors": ["Stefan Brus"],
+	"dependencies": {
+        "derelict-sdl2":">=1.1.9",
+        "derelict-gl3":">=1.0.9"
+	},
+
+    "versions": ["ManualStep"]
+}
