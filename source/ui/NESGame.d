@@ -53,6 +53,18 @@ public class NESGame : IGame
     {
         GL.clear(GL.COLOR_BUFFER_BIT);
 
+        ubyte[256 * 240 * 4] data;
+
+        foreach ( i, val; data )
+        {
+            import std.random;
+            data[i] = cast(ubyte)uniform(0, ubyte.max);
+        }
+
+        import derelict.opengl3.gl;
+
+        glDrawPixels(256, 240, GL.RGBA, GL.UNSIGNED_BYTE, data.ptr);
+
         GL.flush();
     }
 
