@@ -9,6 +9,7 @@ module nesd.Console;
 import nesd.cpu;
 import nesd.INES;
 import nesd.Memory;
+import nesd.PPU;
 
 /**
  * Console struct
@@ -29,6 +30,12 @@ struct Console
     CPU cpu;
 
     /**
+     * The PPU
+     */
+
+    PPU ppu;
+
+    /**
      * Constructor
      *
      * Params:
@@ -47,6 +54,13 @@ struct Console
 
     void step ( )
     {
-        this.cpu.step();
+        enum PPU_STEPS_PER_CYCLE = 3;
+
+        auto cycles = this.cpu.step();
+
+        for ( auto i = 0; i < cycles * PPU_STEPS_PER_CYCLE; i++ )
+        {
+            this.ppu.step();
+        }
     }
 }

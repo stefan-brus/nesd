@@ -144,10 +144,10 @@ struct CPU
      * Print the CPU state along the way.
      *
      * Returns:
-     *      True if the CPU should continue
+     *      The number of CPU cycles used
      */
 
-    bool step ( )
+    ulong step ( )
     in
     {
         assert(this.pc < Address.max);
@@ -160,6 +160,7 @@ struct CPU
         auto opcode = this.memory.read(this.pc);
         auto instruction = OPCODE_TABLE[opcode];
         auto pc_inc = 1; // Number to increment program counter by
+        auto init_cycles = this.cycles;
 
         ubyte[] operands;
 
@@ -185,7 +186,7 @@ struct CPU
 
         version ( ManualStep ) readln();
 
-        return this.pc < Address.max;
+        return this.cycles - init_cycles;
     }
 
     /**
