@@ -500,10 +500,10 @@ struct CPU
                 this.nop();
                 break;
             case "STX":
-                this.nop();
+                this.stx(addr);
                 break;
             case "DEY":
-                this.nop();
+                this.dey();
                 break;
             case "TXS":
                 this.txs();
@@ -518,7 +518,7 @@ struct CPU
                 this.nop();
                 break;
             case "LDY":
-                this.nop();
+                this.ldy(addr);
                 break;
             case "LDA":
                 this.lda(addr);
@@ -536,7 +536,7 @@ struct CPU
                 this.nop();
                 break;
             case "BCS":
-                this.nop();
+                this.bcs(addr);
                 break;
             case "CLV":
                 this.nop();
@@ -554,16 +554,16 @@ struct CPU
                 this.nop();
                 break;
             case "DEX":
-                this.nop();
+                this.dex();
                 break;
             case "BNE":
-                this.nop();
+                this.bne(addr);
                 break;
             case "CLD":
                 this.cld();
                 break;
             case "CPX":
-                this.nop();
+                this.cpx(addr);
                 break;
             case "SBC":
                 this.nop();
@@ -608,6 +608,120 @@ struct CPU
     }
 
     /**
+     * DEY - Decrement Y Register
+     */
+
+    private void dey ( )
+    {
+        this.y--;
+        this.z = this.y == 0;
+        this.n = this.y >= 0x80;
+    }
+
+    /**
+     * CPX - Compare X Register
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void cpx ( Address addr )
+    {
+        auto val = this.memory.read(addr);
+
+        auto res = this.x - this.memory.read(addr);
+        this.z = res == 0;
+        this.n = res >= 0x80;
+        this.c = this.x >= val;
+    }
+
+    /**
+     * STX - Store X Register
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void stx ( Address addr )
+    {
+        this.memory.write(addr, this.x);
+    }
+
+    /**
+     * BNE - Branch If Not Equal
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void bne ( Address addr )
+    {
+        if ( this.z == 0 )
+        {
+            this.addBranchCycles(addr);
+            this.pc = addr;
+        }
+    }
+
+    /**
+     * DEX - Decrement X Register
+     */
+
+    private void dex ( )
+    {
+        this.x--;
+        this.z = this.x == 0;
+        this.n = this.x >= 0x80;
+    }
+
+    /**
+     * BCS - Branch If Carry Set
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void bcs ( Address addr )
+    {
+        if ( this.c > 0 )
+        {
+            this.addBranchCycles(addr);
+            this.pc = addr;
+        }
+    }
+
+    /**
+     * CMP - Compare
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void cmp ( Address addr )
+    {
+        auto val = this.memory.read(addr);
+
+        auto res = this.a - this.memory.read(addr);
+        this.z = res == 0;
+        this.n = res >= 0x80;
+        this.c = this.a >= val;
+    }
+
+    /**
+     * LDX - Load X Register
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void ldy ( Address addr )
+    {
+        this.y = this.memory.read(addr);
+        this.z = this.y == 0;
+        this.n = this.y >= 0x80;
+    }
+
+    /**
      * TXS - Transfer X To Stack Pointer
      */
 
@@ -627,7 +741,7 @@ struct CPU
     {
         this.x = this.memory.read(addr);
         this.z = this.x == 0;
-        this.n = this.x > 0x80;
+        this.n = this.x >= 0x80;
     }
 
     /**
@@ -653,7 +767,7 @@ struct CPU
     {
         this.a = this.memory.read(addr);
         this.z = this.a == 0;
-        this.n = this.a > 0x80;
+        this.n = this.a >= 0x80;
     }
 
     /**
@@ -715,7 +829,7 @@ struct CPU
     {
         this.a ^= this.memory.read(addr);
         this.z = this.a == 0;
-        this.n = this.a > 0x80;
+        this.n = this.a >= 0x80;
     }
 
     /**
@@ -775,7 +889,7 @@ struct CPU
 
         this.v = (val & 0x20) > 0; // bitmask 00100000
         this.z = (val & this.a) > 0;
-        this.n = val > 0x80;
+        this.n = val >= 0x80;
     }
 
     /**
@@ -789,7 +903,7 @@ struct CPU
     {
         this.a = this.a & this.memory.read(addr);
         this.z = this.a == 0;
-        this.n = this.a > 0x80;
+        this.n = this.a >= 0x80;
     }
 
     /**
