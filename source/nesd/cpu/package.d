@@ -289,11 +289,33 @@ struct CPU
     {
         import std.exception;
 
-        Address addr;
         bool page_crossed;
+        auto addr = this.getAddress(instruction.mode, operands, page_crossed);
 
-        // Fetch the address for the instruction's addressing mode
-        with ( AddrMode ) final switch ( instruction.mode )
+        this.pc += instruction.size;
+
+        this.evalInstruction(instruction, addr);
+
+        return page_crossed;
+    }
+
+    /**
+     * Get the address for a given addressing mode and operands
+     *
+     * Params:
+     *      mode = The addressing mode
+     *      operands = The operands
+     *      page_crossed = Set to true of a page was crossed
+     *
+     * Returns:
+     *      The address
+     */
+
+    private Address getAddress ( AddrMode mode, ubyte[] operands, out bool page_crossed )
+    {
+        Address addr;
+
+        with ( AddrMode ) final switch ( mode )
         {
             case Undefined:
                 enforce(false, "Undefined addressing mode");
@@ -368,10 +390,19 @@ struct CPU
                 break;
         }
 
-        // Increment program counter by the size of the instruction
-        this.pc += instruction.size;
+        return addr;
+    }
 
-        // Evaluate the instructon
+    /**
+     * Evaluate the given instruction
+     *
+     * Params:
+     *      instruction = The instruction
+     *      addr = The target address
+     */
+
+    private void evalInstruction ( Instruction instruction, Address addr )
+    {
         switch ( instruction.name )
         {
             case "BRK":
@@ -567,8 +598,6 @@ struct CPU
             default:
                 enforce(false, "Unknown instruction: " ~ instruction.name);
         }
-
-        return page_crossed;
     }
 
     /**
