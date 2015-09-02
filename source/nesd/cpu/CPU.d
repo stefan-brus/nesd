@@ -127,7 +127,8 @@ struct CPU
     body
     {
         import std.exception;
-        import std.stdio;
+        version ( ManualStep ) import std.stdio;
+        debug ( NESDCPU ) import std.stdio;
 
         auto opcode = this.memory.read(this.pc);
         auto instruction = OPCODE_TABLE[opcode];
@@ -141,7 +142,7 @@ struct CPU
             operands ~= this.memory.read(cast(Address)(this.pc + operands.length + 1));
         }
 
-        writefln("%04x: %02x %s", this.pc, opcode, instruction.toPrettyString(operands));
+        debug ( NESDCPU ) writefln("%04x: %02x %s", this.pc, opcode, instruction.toPrettyString(operands));
 
         this.cycles += instruction.cycles;
 
@@ -150,7 +151,7 @@ struct CPU
             this.cycles += instruction.page_cross_cycles;
         }
 
-        writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags (nvubdizc): %08b",
+        debug ( NESDCPU ) writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags (nvubdizc): %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
 
         version ( ManualStep ) readln();

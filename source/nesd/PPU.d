@@ -68,6 +68,7 @@ struct PPU
                               [0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]);
 
     // PPUSTATUS    $2002   VSO- ----   vblank (V), sprite 0 hit (S), sprite overflow (O), read resets write pair for $2005/2006
+    // NB: Initialized to 0x1f
 
     ubyte reg_status;
 
@@ -89,6 +90,9 @@ struct PPU
     body
     {
         this.memory = memory;
+
+        this.reg_status = 0x1f;
+        this.writeRegisters();
     }
 
     /**
@@ -99,7 +103,7 @@ struct PPU
 
     void step ( )
     {
-        import std.stdio;
+        debug ( NESDPPU ) import std.stdio;
 
         this.readRegisters();
 
@@ -110,17 +114,32 @@ struct PPU
 
         this.cycles++;
 
+        // render
         if ( this.f_background_enable || this.f_sprite_enable )
         {
 
         }
 
-        writefln("cycles: %d scanline: %d",
-                  this.cycles, this.scanline);
-        writefln("reg_ctrl: %08b reg_mask: %08b reg_status: %08b",
-                  this.reg_ctrl, this.reg_mask, this.reg_status);
+        // vblank - scanlines 241 to 261
+        if ( this.cycles == 1 )
+        {
+            if ( this.scanline == 241 )
+            {
+
+            }
+            else if ( this.scanline == 261 )
+            {
+                this.f_sprite_zero = false;
+                this.f_sprite_overflow = false;
+            }
+        }
 
         this.writeRegisters();
+
+        debug ( NESDPPU ) writefln("cycles: %d scanline: %d",
+                  this.cycles, this.scanline);
+        debug ( NESDPPU ) writefln("reg_ctrl: %08b reg_mask: %08b reg_status: %08b",
+                  this.reg_ctrl, this.reg_mask, this.reg_status);
     }
 
     /**
