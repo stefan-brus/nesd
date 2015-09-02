@@ -31,9 +31,12 @@ struct Memory
 
     /**
      * $2000-$2007  $0008   NES PPU registers
+     *
+     * Initialized as a pointer array to write directly to the PPU.
+     * Expected to be initialized by the PPU module.
      */
 
-    ubyte[0x0008] ppu_reg;
+    ubyte*[0x0008] ppu_reg;
 
     /**
      * $4000-$401F  $0020   NES APU and I/O registers
@@ -145,6 +148,8 @@ struct Memory
     }
     body
     {
+        import std.exception;
+
         ubyte* ptr;
 
         // $0000-$07FF  $0800   2KB internal RAM
@@ -161,9 +166,12 @@ struct Memory
         }
         // $2000-$2007  $0008   NES PPU registers
         // $2008-$3FFF  $1FF8   Mirrors of $2000-2007 (repeats every 8 bytes)
+        // NB: PPU register pointers must be initialized at this point
         else if ( addr <= 0x3fff )
         {
-            ptr = &this.ppu_reg[addr % this.ppu_reg.sizeof];
+            auto idx = addr % this.ppu_reg.sizeof;
+            enforce(this.ppu_reg[idx] !is null, "PPU registers not initialized");
+            ptr = this.ppu_reg[idx];
         }
         // $4000-$401F  $0020   NES APU and I/O registers
         else if ( addr <= 0x401f )

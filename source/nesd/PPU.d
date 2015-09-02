@@ -75,6 +75,26 @@ struct PPU
     mixin FlagByte!(reg_status, ["f_vblank", "f_sprite_zero", "f_sprite_overflow"],
                                 [0x80, 0x40, 0x20]);
 
+    // OAMADDR  $2003   aaaa aaaa   OAM read/write address
+
+    ubyte reg_oam_addr;
+
+    // OAMDATA  $2004   dddd dddd   OAM data read/write
+
+    ubyte reg_oam_data;
+
+    // PPUSCROLL   $2005   xxxx xxxx   fine scroll position (two writes: X, Y)
+
+    ubyte reg_scroll;
+
+    // PPUADDR  $2006   aaaa aaaa   PPU read/write address (two writes: MSB, LSB)
+
+    ubyte reg_addr;
+
+    // PPUDATA  $2007   dddd dddd   PPU data read/write
+
+    ubyte reg_data;
+
     /**
      * Constructor
      *
@@ -91,8 +111,8 @@ struct PPU
     {
         this.memory = memory;
 
+        this.initPPUMemory();
         this.reg_status = 0x1f;
-        this.writeRegisters();
     }
 
     /**
@@ -104,8 +124,6 @@ struct PPU
     void step ( )
     {
         debug ( NESDPPU ) import std.stdio;
-
-        this.readRegisters();
 
         if ( this.cycles == PPU_CYCLES_MAX )
         {
@@ -134,8 +152,6 @@ struct PPU
             }
         }
 
-        this.writeRegisters();
-
         debug ( NESDPPU ) writefln("cycles: %d scanline: %d",
                   this.cycles, this.scanline);
         debug ( NESDPPU ) writefln("reg_ctrl: %08b reg_mask: %08b reg_status: %08b",
@@ -143,24 +159,18 @@ struct PPU
     }
 
     /**
-     * Read the values of the registers from memory
+     * Initialize the PPU register mapping of the memory module
      */
 
-    private void readRegisters ( )
+    private void initPPUMemory ( )
     {
-        this.reg_ctrl = this.memory.read(0x2000);
-        this.reg_mask = this.memory.read(0x2001);
-        this.reg_status = this.memory.read(0x2002);
-    }
-
-    /**
-     * Write the values of the registers to memory
-     */
-
-    private void writeRegisters ( )
-    {
-        this.memory.write(0x2000, this.reg_ctrl);
-        this.memory.write(0x2001, this.reg_mask);
-        this.memory.write(0x2002, this.reg_status);
+        this.memory.ppu_reg[0] = &this.reg_ctrl;
+        this.memory.ppu_reg[1] = &this.reg_mask;
+        this.memory.ppu_reg[2] = &this.reg_status;
+        this.memory.ppu_reg[3] = &this.reg_oam_addr;
+        this.memory.ppu_reg[4] = &this.reg_oam_data;
+        this.memory.ppu_reg[5] = &this.reg_scroll;
+        this.memory.ppu_reg[6] = &this.reg_addr;
+        this.memory.ppu_reg[7] = &this.reg_data;
     }
 }
