@@ -46,6 +46,7 @@ struct Console
     {
         this.memory = Memory(rom);
         this.cpu = CPU(&memory);
+        this.ppu = PPU(&memory);
     }
 
     /**

@@ -13,6 +13,8 @@ module nesd.cpu.CPU;
 import nesd.cpu.Instructions;
 import nesd.Memory;
 
+import util.meta.FlagByte;
+
 import std.exception;
 
 /**
@@ -66,7 +68,8 @@ struct CPU
     ulong cycles;
 
     /**
-     * The processor flags
+     * The processor flags, in order of least to most significant bit:
+     *      Carry, Zero, Interrupt disable, Decimal (ignored), Mostly unused?, Unused?, Overflow, Negative
      *
      * Template params:
      *      bitmask = The bitmask to compare against the processor flags
@@ -74,39 +77,8 @@ struct CPU
 
     private ubyte flags_;
 
-    template flags ( ubyte bitmask )
-    {
-        @property
-        {
-            ubyte flags ( )
-            {
-                return this.flags_ & bitmask;
-            }
-
-            ubyte flags ( bool val )
-            {
-                if ( val )
-                {
-                    this.flags_ |= bitmask;
-                }
-                else
-                {
-                    this.flags_ &= ~bitmask;
-                }
-
-                return this.flags_ & bitmask;
-            }
-        }
-    }
-
-    alias c = flags!0x01; // carry
-    alias z = flags!0x02; // zero
-    alias i = flags!0x04; // interrupt disable
-    alias d = flags!0x08; // decimal (ignored)
-    alias b = flags!0x10; // mostly unused?
-    alias u = flags!0x20; // unused
-    alias v = flags!0x40; // overflow
-    alias n = flags!0x80; // negative
+    mixin FlagByte!(flags_, ["c", "z", "i", "d", "b", "u", "v", "n"],
+                    [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]);
 
     /**
      * Constructor
