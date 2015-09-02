@@ -75,10 +75,18 @@ struct CPU
      *      bitmask = The bitmask to compare against the processor flags
      */
 
-    private ubyte flags_;
+    ubyte flags;
 
-    mixin FlagByte!(flags_, ["c", "z", "i", "d", "b", "u", "v", "n"],
+    mixin FlagByte!(flags, ["c", "z", "i", "d", "b", "u", "v", "n"],
                     [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]);
+
+    /**
+     * Whether an NMI - non-maskable interrupt - has been triggered
+     *
+     * See: http://wiki.nesdev.com/w/index.php/NMI
+     */
+
+    bool nmi_triggered;
 
     /**
      * Constructor
@@ -152,7 +160,7 @@ struct CPU
         }
 
         debug ( NESDCPU ) writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags (nvubdizc): %08b",
-            this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
+            this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags);
 
         version ( ManualStep ) readln();
 
@@ -262,6 +270,15 @@ struct CPU
     {
         import std.exception;
 
+        if ( this.nmi_triggered )
+        {
+            enum NMI_ADDR = 0xfffa,
+                 NMI_CYCLES = 7;
+
+            this.nmi_triggered = false;
+            this.interrupt(NMI_ADDR, NMI_CYCLES);
+        }
+
         bool page_crossed;
         auto addr = this.getAddress(instruction.mode, operands, page_crossed);
 
@@ -270,6 +287,23 @@ struct CPU
         this.evalInstruction(instruction, addr);
 
         return page_crossed;
+    }
+
+    /**
+     * Handle an interrupt.
+     *
+     * Params:
+     *      addr = The address to read the PC from
+     *      cycles = The number of cycles used
+     */
+
+    private void interrupt ( Address addr, ulong cycles )
+    {
+        this.pushw(this.pc);
+        this.php();
+        this.pc = this.memory.read(addr);
+        this.i = true;
+        this.cycles += cycles;
     }
 
     /**
@@ -725,7 +759,7 @@ struct CPU
 
     private void plp ( )
     {
-        this.flags_ = this.pop() & ~0x10 | 0x20; // unset b, set u
+        this.flags = this.pop() & ~0x10 | 0x20; // unset b, set u
     }
 
     /**
@@ -802,7 +836,7 @@ struct CPU
 
     private void php ( )
     {
-        this.push(this.flags_ | 0x10); // set b
+        this.push(this.flags | 0x10); // set b
     }
 
     /**
