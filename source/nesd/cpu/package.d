@@ -99,14 +99,14 @@ struct CPU
         }
     }
 
-    alias c = flags!0x01;
-    alias z = flags!0x02;
-    alias i = flags!0x04;
-    alias d = flags!0x08;
-    alias b = flags!0x10;
-    alias u = flags!0x20;
-    alias v = flags!0x40;
-    alias n = flags!0x80;
+    alias c = flags!0x01; // carry
+    alias z = flags!0x02; // zero
+    alias i = flags!0x04; // interrupt disable
+    alias d = flags!0x08; // decimal (ignored)
+    alias b = flags!0x10; // mostly unused?
+    alias u = flags!0x20; // unused
+    alias v = flags!0x40; // overflow
+    alias n = flags!0x80; // negative
 
     /**
      * Constructor
