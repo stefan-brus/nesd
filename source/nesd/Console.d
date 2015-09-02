@@ -6,7 +6,7 @@
 
 module nesd.Console;
 
-import nesd.cpu;
+import nesd.cpu.CPU;
 import nesd.INES;
 import nesd.Memory;
 import nesd.PPU;

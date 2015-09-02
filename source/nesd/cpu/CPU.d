@@ -8,7 +8,7 @@
  * http://wiki.nesdev.com/w/index.php/CPU
  */
 
-module nesd.cpu;
+module nesd.cpu.CPU;
 
 import nesd.cpu.Instructions;
 import nesd.Memory;
