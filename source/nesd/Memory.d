@@ -34,9 +34,14 @@ struct Memory
      *
      * Initialized as a pointer array to write directly to the PPU.
      * Expected to be initialized by the PPU module.
+     * A delegate is called when these addresses are read or written.
      */
 
     ubyte*[0x0008] ppu_reg;
+
+    alias PPURegDg = void delegate ( Address );
+    PPURegDg ppu_read_dg;
+    PPURegDg ppu_write_dg;
 
     /**
      * $4000-$401F  $0020   NES APU and I/O registers
@@ -110,7 +115,7 @@ struct Memory
 
     void write ( Address addr, ubyte val )
     {
-        *(this.access(addr)) = val;
+        *(this.access!false(addr)) = val;
     }
 
     /**
@@ -134,6 +139,10 @@ struct Memory
      *
      * Addresses sometimes mirror other parts of the memory, and these are
      * accessed according to the specification in the NESdev wiki.
+     *
+     * Template params:
+     *      read = Whether or not this is a read
+     *
      * Params:
      *      addr = The address
      *
@@ -141,7 +150,7 @@ struct Memory
      *      A pointer to the value at the given address
      */
 
-    private ubyte* access ( Address addr )
+    private ubyte* access ( bool read = true ) ( Address addr )
     out ( ptr )
     {
         assert(ptr !is null);
@@ -170,7 +179,19 @@ struct Memory
         else if ( addr <= 0x3fff )
         {
             auto idx = addr % this.ppu_reg.sizeof;
-            enforce(this.ppu_reg[idx] !is null, "PPU registers not initialized");
+            assert(this.ppu_reg[idx] !is null, "PPU registers not initialized");
+
+            static if ( read )
+            {
+                assert(this.ppu_read_dg !is null, "PPU read delegate not initialized");
+                this.ppu_read_dg(addr);
+            }
+            else
+            {
+                assert(this.ppu_write_dg !is null, "PPU write delegate not initialized");
+                this.ppu_write_dg(addr);
+            }
+
             ptr = this.ppu_reg[idx];
         }
         // $4000-$401F  $0020   NES APU and I/O registers

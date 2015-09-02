@@ -19,6 +19,12 @@ import util.meta.MaxCounter;
 struct PPU
 {
     /**
+     * Convenience alias
+     */
+
+    alias Address = Memory.Address;
+
+    /**
      * Pointer to the memory module
      */
 
@@ -96,6 +102,12 @@ struct PPU
     ubyte reg_data;
 
     /**
+     * Whether or not an NMI interrupt should be triggered
+     */
+
+    bool nmi;
+
+    /**
      * Constructor
      *
      * Params:
@@ -113,6 +125,7 @@ struct PPU
 
         this.initPPUMemory();
         this.reg_status = 0x1f;
+        this.nmi = true;
     }
 
     /**
@@ -172,5 +185,41 @@ struct PPU
         this.memory.ppu_reg[5] = &this.reg_scroll;
         this.memory.ppu_reg[6] = &this.reg_addr;
         this.memory.ppu_reg[7] = &this.reg_data;
+
+        this.memory.ppu_read_dg = &this.handleRead;
+        this.memory.ppu_write_dg = &this.handleWrite;
+    }
+
+    /**
+     * Delegates to handle reads and writes to the PPU registers
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void handleRead ( Address addr )
+    {
+        switch ( addr % 8 )
+        {
+            // 0x2002 - status
+            case 2:
+                this.f_vblank = this.nmi;
+                this.nmi = !this.nmi;
+                break;
+            // 0x2004 - OAM data
+            case 4:
+                break;
+            // 0x2007 - data
+            case 7:
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private void handleWrite ( Address addr )
+    {
+
     }
 }
