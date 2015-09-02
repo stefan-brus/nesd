@@ -159,17 +159,17 @@ struct CPU
 
         auto opcode = this.memory.read(this.pc);
         auto instruction = OPCODE_TABLE[opcode];
-        auto pc_inc = 1; // Number to increment program counter by
         auto init_cycles = this.cycles;
 
         ubyte[] operands;
 
         if ( instruction.size > 0 ) while ( operands.length < instruction.size - 1 )
         {
-            enforce(this.pc + pc_inc < Address.max, "Instruction requires more operands than program size: " ~ instruction.name);
-            operands ~= this.memory.read(cast(Address)(this.pc + pc_inc));
-            pc_inc++;
+            enforce(this.pc + operands.length + 1 > 0x8000, "Instruction caused PC to overflow: " ~ instruction.name);
+            operands ~= this.memory.read(cast(Address)(this.pc + operands.length + 1));
         }
+
+        writefln("%04x: %02x %s", this.pc, opcode, instruction.toPrettyString(operands));
 
         this.cycles += instruction.cycles;
 
@@ -178,10 +178,7 @@ struct CPU
             this.cycles += instruction.page_cross_cycles;
         }
 
-        this.pc += pc_inc;
-
-        writefln("%02x %s", opcode, instruction.toPrettyString(operands));
-        writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags: %08b",
+        writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags (nvubdizc): %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags_);
 
         version ( ManualStep ) readln();
@@ -324,7 +321,6 @@ struct CPU
 
                 addr += this.pc + 2;
                 addr += offset;
-                addr++;
 
                 if ( offset > 0x7f )
                 {
@@ -371,6 +367,9 @@ struct CPU
                 addr += this.y;
                 break;
         }
+
+        // Increment program counter by the size of the instruction
+        this.pc += instruction.size;
 
         // Evaluate the instructon
         switch ( instruction.name )
