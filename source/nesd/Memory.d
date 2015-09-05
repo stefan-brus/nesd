@@ -66,8 +66,22 @@ struct Memory
 
     this ( iNESFile rom )
     {
+        import std.exception;
+
         this.ram[] = rom.chr_rom[0 .. this.ram.sizeof];
-        this.magic[0x8000 - 0x4020 .. $] = rom.prg_rom[0 .. 0xffff - 0x7fff];
+
+        if ( rom.header.prg_size == 2 )
+        {
+            this.magic[0x8000 - 0x4020 .. $] = rom.prg_rom[];
+        }
+        else if ( rom.header.prg_size == 1 )
+        {
+            this.magic[0xc000 - 0x4020 .. $] = rom.prg_rom[];
+        }
+        else
+        {
+            enforce(false, "Unhandled PRG ROM size");
+        }
     }
 
     /**
