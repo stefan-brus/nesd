@@ -113,8 +113,12 @@ struct CPU
 
     void reset ( )
     {
-        this.pc = 0x8000;
+        enum INIT_ADDR = 0xfffc;
+
+        this.pc = this.memory.readw(INIT_ADDR);
         this.sp = 0xff;
+        this.i = true;
+        this.u = true;
         this.cycles = 0;
     }
 
