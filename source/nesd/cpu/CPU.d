@@ -324,9 +324,13 @@ struct CPU
 
     private void interrupt ( Address addr, ulong cycles )
     {
+        debug ( NESDCPU ) import std.stdio;
+
+        debug ( NESDCPU ) writefln("INTERRUPT PC: %04x PC ADDR: %04x NEW PC: %04x", this.pc, addr, this.memory.readw(addr));
+
         this.pushw(this.pc);
         this.php();
-        this.pc = this.memory.read(addr);
+        this.pc = this.memory.readw(addr);
         this.i = true;
         this.cycles += cycles;
     }
