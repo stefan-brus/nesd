@@ -280,7 +280,32 @@ struct CPU
         }
 
         bool page_crossed;
-        auto addr = this.getAddress(instruction.mode, operands, page_crossed);
+        Address addr;
+
+        if ( instruction.name != "JMP" || operands[1] != 0xff )
+        {
+            addr = this.getAddress(instruction.mode, operands, page_crossed);
+        }
+        else
+        {
+            /**
+             * From wikipedia:
+             *
+             * The 6502's memory indirect jump instruction, JMP (<address>),
+             * is partially broken. If <address> is hex xxFF (i.e., any word
+             * ending in FF), the processor will not jump to the address stored
+             * in xxFF and xxFF+1 as expected, but rather the one defined by
+             * xxFF and xx00 (for example, JMP ($10FF) would jump to the address
+             * stored in 10FF and 1000, instead of the one stored in 10FF and
+             * 1100). This defect continued through the entire NMOS line, but
+             * was corrected in the CMOS derivatives.
+             */
+
+            Address lo_addr = (operands[0] << 8) | operands[1],
+                    hi_addr = (operands[0] << 8) & 0xff00;
+
+            addr = (this.memory.read(hi_addr) << 8) | this.memory.read(lo_addr);
+        }
 
         this.pc += instruction.size;
 
