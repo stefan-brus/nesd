@@ -162,7 +162,7 @@ struct CPU
         debug ( NESDCPU ) writefln("cycles: %d PC: %04x SP: %02x X: %02x Y: %02x A: %02x flags (nvubdizc): %08b",
             this.cycles, this.pc, this.sp, this.x, this.y, this.a, this.flags);
 
-        version ( ManualStep ) readln();
+        debug ( ManualStep ) readln();
 
         return this.cycles - init_cycles;
     }
@@ -542,7 +542,7 @@ struct CPU
                 this.nop();
                 break;
             case "CPY":
-                this.nop();
+                this.cpy(addr);
                 break;
             case "CMP":
                 this.nop();
@@ -605,6 +605,23 @@ struct CPU
             default:
                 enforce(false, "Unknown instruction: " ~ instruction.name);
         }
+    }
+
+    /**
+     * CPY - Compare Y Register
+     *
+     * Params:
+     *      addr = The address
+     */
+
+    private void cpy ( Address addr )
+    {
+        auto val = this.memory.read(addr);
+
+        auto res = this.y - this.memory.read(addr);
+        this.z = res == 0;
+        this.n = res >= 0x80;
+        this.c = this.y >= val;
     }
 
     /**

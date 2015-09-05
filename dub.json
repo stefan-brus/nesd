@@ -8,6 +8,5 @@
         "derelict-gl3":">=1.0.9"
 	},
 
-    "versions": ["ManualStep"],
-    "debugVersions": ["NESDCPU", "NESDPPU"]
+    "debugVersions": ["ManualStep", "NESDCPU", "NESDPPU"]
 }
